@@ -7,6 +7,10 @@ variable "k8s_vpc_CIDR" {
   default     = "10.0.0.0/16"
 }
 
+########################
+#Availability Zones
+########################
+
 variable "public_subnet-01_AZ" {
   default     = "us-east-1b"
 }
@@ -22,6 +26,10 @@ variable "private_subnet-01_AZ" {
 variable "private_subnet-02_AZ" {
   default     = "us-east-1c"
 }
+
+########################
+#Subnet CIDRs
+########################
 
 variable "public_subnet-01_CIDR" {
   default     = "10.0.12.0/24"
@@ -43,9 +51,8 @@ variable "private_subnet-02_CIDR" {
 #ElasticSearch options
 ########################
 
-#toggles ES feature
 variable "enable_es" {
-  default     = "true"
+  default     = "false"
 }
 
 variable "es_ebs_volume_type" {
@@ -66,5 +73,5 @@ variable "es_ebs_instance_type" {
 ########################
 
 variable "enable_priv_subs" {
-  default    = "true"
+  default    = "false"
   }

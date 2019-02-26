@@ -1,16 +1,15 @@
 provider "aws" {
 /* Credentials are stored/parsed in ~/.aws/credentials, not here
-  access_key = "ACCESS_KEY_HERE"
-  secret_key = "SECRET_KEY_HERE" */
-  region     = "${var.region}"
+  access_key              = "ACCESS_KEY_HERE"
+  secret_key              = "SECRET_KEY_HERE" */
+  region                  = "${var.region}"
 }
 
 resource "aws_vpc" "k8s" {
-  cidr_block                       = "${var.k8s_vpc_CIDR}"
-  instance_tenancy                 = "default"
-  assign_generated_ipv6_cidr_block = "false"
-  enable_dns_hostnames             = "true"
-  enable_dns_support               = "true"
+  cidr_block              = "${var.k8s_vpc_CIDR}"
+  instance_tenancy        = "default"
+  enable_dns_hostnames    = "true"
+  enable_dns_support      = "true"
   tags {
     Name        = "k8s"
     Terraform   = "true"
@@ -50,7 +49,6 @@ resource "aws_subnet" "public-01" {
   }
 }
 
-
 resource "aws_subnet" "public-02" {
   vpc_id                  = "${aws_vpc.k8s.id}"
   availability_zone       = "${var.public_subnet-02_AZ}"
@@ -63,9 +61,9 @@ resource "aws_subnet" "public-02" {
 
 
 resource "aws_route" "public_internet_gateway" {
-  route_table_id         = "${aws_route_table.public.id}"
-  destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = "${aws_internet_gateway.this.id}"
+  route_table_id          = "${aws_route_table.public.id}"
+  destination_cidr_block  = "0.0.0.0/0"
+  gateway_id              = "${aws_internet_gateway.this.id}"
   timeouts {
     create      = "5m"
   }
@@ -73,80 +71,101 @@ resource "aws_route" "public_internet_gateway" {
 
 
 resource "aws_route_table" "public" {
- vpc_id                  = "${aws_vpc.k8s.id}"
+ vpc_id                   = "${aws_vpc.k8s.id}"
  tags {
     Terraform   = "true"
   }
 }
 
 resource "aws_internet_gateway" "this" {
- vpc_id                  = "${aws_vpc.k8s.id}"
+ vpc_id                   = "${aws_vpc.k8s.id}"
+ tags {
+    Terraform   = "true"
+  }
 }
 
 
 
 resource "aws_route_table_association" "public-01" {
-  subnet_id              = "${aws_subnet.public-01.id}"
-  route_table_id         = "${aws_route_table.public.id}"
+  subnet_id               = "${aws_subnet.public-01.id}"
+  route_table_id          = "${aws_route_table.public.id}"
 }
 
 
 resource "aws_route_table_association" "public-02" {
-  subnet_id              = "${aws_subnet.public-02.id}"
-  route_table_id         = "${aws_route_table.public.id}"
+  subnet_id               = "${aws_subnet.public-02.id}"
+  route_table_id          = "${aws_route_table.public.id}"
 }
 
 
 resource "aws_eip" "nat" {
-  count                  = "${var.enable_priv_subs ? 1 : 0}"
-  vpc                    = true
+  count                   = "${var.enable_priv_subs ? 1 : 0}"
+  vpc                     = true
+  tags {
+     Terraform   = "true"
+   }
 }
 
 resource "aws_nat_gateway" "this" {
-  count                  = "${var.enable_priv_subs ? 1 : 0}"
-  allocation_id          = "${aws_eip.nat.id}"
-  subnet_id              = "${aws_subnet.public-01.id}"
-  depends_on             = ["aws_internet_gateway.this"]
+  count                   = "${var.enable_priv_subs ? 1 : 0}"
+  allocation_id           = "${aws_eip.nat.id}"
+  subnet_id               = "${aws_subnet.public-01.id}"
+  depends_on              = ["aws_internet_gateway.this"]
+  tags {
+     Terraform   = "true"
+   }
 }
 
 resource "aws_route_table" "private" {
-  count                  = "${var.enable_priv_subs ? 1 : 0}"
-  vpc_id                 = "${aws_vpc.k8s.id}"
+  count                   = "${var.enable_priv_subs ? 1 : 0}"
+  vpc_id                  = "${aws_vpc.k8s.id}"
   tags {
     Terraform   = "true"
   }
 }
 
-resource "aws_route" "nat_gateway" {
-  count                  = "${var.enable_priv_subs ? 1 : 0}"
-  route_table_id         = "${aws_route_table.private.id}"
-  destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = "${aws_nat_gateway.this.id}"
+resource "aws_route" "nat_gateway_all_traffic" {
+  count                   = "${var.enable_priv_subs ? 1 : 0}"
+  route_table_id          = "${aws_route_table.private.id}"
+  destination_cidr_block  = "0.0.0.0/0"
+  gateway_id              = "${aws_nat_gateway.this.id}"
   timeouts {
     create = "5m"
   }
+  tags {
+     Terraform   = "true"
+   }
 }
 
 
 resource "aws_route_table_association" "private-01" {
-  count                  = "${var.enable_priv_subs ? 1 : 0}"
-  subnet_id              = "${aws_subnet.private-01.id}"
-  route_table_id         = "${aws_route_table.private.id}"
+  count                   = "${var.enable_priv_subs ? 1 : 0}"
+  subnet_id               = "${aws_subnet.private-01.id}"
+  route_table_id          = "${aws_route_table.private.id}"
+  tags {
+     Terraform   = "true"
+   }
 }
 
 resource "aws_route_table_association" "private-02" {
-  count                  = "${var.enable_priv_subs ? 1 : 0}"
-  subnet_id              = "${aws_subnet.private-02.id}"
-  route_table_id         = "${aws_route_table.private.id}"
+  count                   = "${var.enable_priv_subs ? 1 : 0}"
+  subnet_id               = "${aws_subnet.private-02.id}"
+  route_table_id          = "${aws_route_table.private.id}"
+  tags {
+     Terraform   = "true"
+   }
 }
 
 
 module "eks" {
-  source                = "../modules/terraform-aws-eks"
-  cluster_name          = "test-eks-cluster"
-  subnets               = ["${aws_subnet.public-01.id}", "${aws_subnet.public-02.id}"]
-  tags                  = {Environment = "test"}
-  vpc_id                = "${aws_vpc.k8s.id}"
+  source                  = "terraform-aws-modules/eks/aws"
+  cluster_name            = "test-eks-cluster"
+  subnets                 = ["${aws_subnet.public-01.id}", "${aws_subnet.public-02.id}"]
+  tags                    = {Environment = "test"}
+  vpc_id                  = "${aws_vpc.k8s.id}"
+  workers_group_defaults  = {
+    public_ip             = "true"
+  }
 }
 
 data "aws_region" "current" {}
@@ -154,12 +173,12 @@ data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
 resource "aws_elasticsearch_domain" "this" {
-  domain_name           = "this"
-  count                 = "${var.enable_es ? 1 : 0}"
+  domain_name            = "this"
+  count                  = "${var.enable_es ? 1 : 0}"
   ebs_options{
-    ebs_enabled         = "true"
-    volume_type         = "${var.es_ebs_volume_type}"
-    volume_size         = "${var.es_ebs_volume_size}"
+    ebs_enabled          = "true"
+    volume_type          = "${var.es_ebs_volume_type}"
+    volume_size          = "${var.es_ebs_volume_size}"
   }
 
   cluster_config {
@@ -183,8 +202,8 @@ POLICY
   snapshot_options {
     automated_snapshot_start_hour = 23
   }
-
-  tags = {
-    Domain = "this"
+  tags {
+    Domain      = "this"
+    Terraform   = "true"
   }
 }
