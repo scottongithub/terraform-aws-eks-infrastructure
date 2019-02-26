@@ -1,5 +1,5 @@
 # Terraform-aws-eks Infrastructure and Cluster
-A Terraform script that creates the necessary infrastructure for an AWS EKS cluster. The module [terraform-aws-eks](terraform-aws-modules/eks/aws) is then called and a cluster is created. The default setup has one worker node (`m4.large`) in a public subnet. Parameters are configurable in `variables.tf`. An AWS ElasticSearch instance is available as well (disabled by default), also with parameters configurable in `variables.tf`
+A Terraform script that creates the necessary infrastructure for an AWS EKS cluster. The module [terraform-aws-eks](https://github.com/terraform-aws-modules/terraform-aws-eks) is then called and a cluster is created. The default setup has one worker node (`m4.large`) in a public subnet. Parameters are configurable in `variables.tf`. An AWS ElasticSearch instance is available as well (disabled by default), also with parameters configurable in `variables.tf`
 
 ## Prerequisites
 * `terraform`, configured to use the `aws` provider, with AWS IAM permissions to create/delete all included resources
